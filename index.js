@@ -4,6 +4,10 @@ const cors = require('cors');
 
 const port = process.env.PORT || 5000;
 
+//JWT
+const jwt = require('jsonwebtoken');
+
+
 //middleWare
 app.use(cors())
 app.use(express.json())
@@ -33,6 +37,17 @@ async function run() {
     const reviewCollection = client.db("bistroDb").collection("reviews")
 
     const cartCollection = client.db("bistroDb").collection("carts")
+
+
+    //JWT
+    app.post('/jwt', (req,res)=>{
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, {expiresIn: '1h'})
+      res.send({token})
+
+    })
+
+
 
 
     //user related apis (CRUD)
