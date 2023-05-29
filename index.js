@@ -28,52 +28,75 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const usersCollection = client.db("bistroDb").collection('users')
     const menuCollection = client.db("bistroDb").collection('menu')
-    const reviewCollection = client.db("bistroDb").collection("reviews") 
+    const reviewCollection = client.db("bistroDb").collection("reviews")
 
     const cartCollection = client.db("bistroDb").collection("carts")
 
-    app.get('/menu', async(req,res)=>{
-        const result = await menuCollection.find().toArray()
-        res.send(result);
+
+    //user related apis (CRUD)
+
+    //CREATE
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      //see the user is already existing user or not
+      const query = { email: user.email }
+      const existingUser = await usersCollection.findOne(query);
+      console.log('existinguser ', existingUser);
+      // if use is exist then it will not create a new user
+      if (existingUser) {
+        return res.send({ message: 'user already exist' })
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result)
     })
 
 
-    app.get('/reviews', async(req,res)=>{
-    
+
+    //menu related apis
+    app.get('/menu', async (req, res) => {
+      const result = await menuCollection.find().toArray()
+      res.send(result);
+    })
+
+    //review related apis
+    app.get('/reviews', async (req, res) => {
+
       const result = await reviewCollection.find().toArray()
-    
+
       res.send(result);
     })
 
 
     //cart collection apis (add to cart operations) (CRUD)
     //READ
-    app.get('/carts', async(req,res)=>{
+    app.get('/carts', async (req, res) => {
       const email = req.query.email;
-      console.log(email);
-      if(!email){
+      // console.log(email);
+      if (!email) {
         res.send([])
       }
-      const query = {email : email}
+      const query = { email: email }
       const result = await cartCollection.find(query).toArray();
       res.send(result);
     })
 
 
     //CREATE
-    app.post('/carts', async(req, res) =>{
+    app.post('/carts', async (req, res) => {
       const item = req.body;
-      console.log(item);
+      // console.log(item);
       const result = await cartCollection.insertOne(item)
       res.send(result);
     })
 
     //DELETE
-    app.delete('/carts/:id', async(req,res)=>{
-      console.log("reached");
+    app.delete('/carts/:id', async (req, res) => {
+      // console.log("reached");
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await cartCollection.deleteOne(query);
       res.send(result)
     })
@@ -105,11 +128,11 @@ run().catch(console.dir);
 
 
 
-app.get('/', (req,res)=>{
-    res.send('bistro boss server is running')
+app.get('/', (req, res) => {
+  res.send('bistro boss server is running')
 })
 
-app.listen(port, ()=>{
-   console.log(`bistro boss server is running at port: ${port}`)
+app.listen(port, () => {
+  console.log(`bistro boss server is running at port: ${port}`)
 })
 
