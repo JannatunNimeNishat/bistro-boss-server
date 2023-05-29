@@ -37,14 +37,21 @@ async function run() {
 
     //user related apis (CRUD)
 
+    // get all the users
+    app.get('/users', async (req, res) => {
+      const result = await usersCollection.find().toArray()
+      res.send(result)
+
+    })
+
     //CREATE
     app.post('/users', async (req, res) => {
       const user = req.body;
-      console.log(user);
+      // console.log(user);
       //see the user is already existing user or not
       const query = { email: user.email }
       const existingUser = await usersCollection.findOne(query);
-      console.log('existinguser ', existingUser);
+      // console.log('existinguser ', existingUser);
       // if use is exist then it will not create a new user
       if (existingUser) {
         return res.send({ message: 'user already exist' })
@@ -53,7 +60,28 @@ async function run() {
       res.send(result)
     })
 
+    //PATCH update a user role (admin or normal user)
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter,updateDoc);
+      res.send(result);
+    })
 
+
+    //Delete a use
+    app.delete('/users/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    })
 
     //menu related apis
     app.get('/menu', async (req, res) => {
