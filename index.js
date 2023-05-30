@@ -73,12 +73,37 @@ async function run() {
 
     //user related apis (CRUD)
 
+
+    const verifyAdmin = async(req,res,next) =>{
+     const email = req.decoded.email;
+     const query = {email: email}
+     const user = await usersCollection.findOne(query)
+     if(user?.role !== 'admin'){
+       return res.status(403).send({ error: true, message: 'forbidden request' })
+     }
+     next();
+    }
+
+
+    /** Securing a api steps:
+     * 0. do not show secure links to those who should not see the links
+     * 1. use jwt token: verifyJWT
+     * 2. use verifyAdmin middle ware
+     */
+
+
+
+
+
     // get all the users
-    app.get('/users', async (req, res) => {
+    app.get('/users',verifyJWT, verifyAdmin ,async (req, res) => {
+      console.log('reached');
       const result = await usersCollection.find().toArray()
       res.send(result)
 
     })
+
+
 
     //CREATE JWT
     app.post('/users', async (req, res) => {
@@ -95,6 +120,19 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result)
     })
+
+    //checking the user is admin or not
+    app.get('/users/admin/:email',verifyJWT ,async(req,res)=>{
+      const email = req.params.email;
+      if(req.decoded.email !== email){
+        res.send({admin: false})
+      }
+      const query = {email: email}
+      const user = await usersCollection.findOne(query)
+      const result = {admin: user?.role === 'admin'}
+      res.send(result)
+    })
+
 
 
     //PATCH update a user role (admin or normal user)
