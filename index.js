@@ -126,7 +126,7 @@ async function run() {
       const email = req.params.email;
       console.log(email);
       if(req.decoded.email !== email){
-      return  res.send({admin: false})
+        res.send({admin: false})
       }
       const query = {email: email}
       const user = await usersCollection.findOne(query)
