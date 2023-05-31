@@ -124,8 +124,9 @@ async function run() {
     //checking the user is admin or not
     app.get('/users/admin/:email',verifyJWT ,async(req,res)=>{
       const email = req.params.email;
+      console.log(email);
       if(req.decoded.email !== email){
-        res.send({admin: false})
+      return  res.send({admin: false})
       }
       const query = {email: email}
       const user = await usersCollection.findOne(query)
@@ -158,13 +159,30 @@ async function run() {
       res.send(result);
     })
 
-    //menu related apis
+
+
+                         //menu related apis
+    //get menu                     
     app.get('/menu', async (req, res) => {
       const result = await menuCollection.find().toArray()
       res.send(result);
     })
 
-    //review related apis
+
+
+    //post/create menu by admin
+    app.post('/menu', verifyJWT, verifyAdmin, async(req,res)=>{
+      const newItem = req.body;
+      const result = await menuCollection.insertOne(newItem)
+      res.send(result)
+    })
+
+
+
+
+
+                //review related apis
+
     app.get('/reviews', async (req, res) => {
 
       const result = await reviewCollection.find().toArray()
