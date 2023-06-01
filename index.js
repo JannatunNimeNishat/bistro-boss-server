@@ -4,6 +4,9 @@ const cors = require('cors');
 
 const port = process.env.PORT || 5000;
 
+
+
+
 //JWT
 const jwt = require('jsonwebtoken');
 
@@ -12,6 +15,15 @@ const jwt = require('jsonwebtoken');
 app.use(cors())
 app.use(express.json())
 require('dotenv').config()
+
+
+
+
+//stripe
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
+console.log(process.env.PAYMENT_SECRET_KEY);
+//console.log(process.env.ACCESS_TOKEN);
+
 
 //verify the token
 const verifyJWT = (req, res, next) => {
@@ -75,6 +87,7 @@ async function run() {
 
 
     const verifyAdmin = async(req,res,next) =>{
+
      const email = req.decoded.email;
      const query = {email: email}
      const user = await usersCollection.findOne(query)
@@ -124,7 +137,7 @@ async function run() {
     //checking the user is admin or not
     app.get('/users/admin/:email',verifyJWT ,async(req,res)=>{
       const email = req.params.email;
-      console.log(email);
+      // console.log(email);
       if(req.decoded.email !== email){
         res.send({admin: false})
       }
@@ -240,6 +253,30 @@ async function run() {
 
 
 
+                  // stripe apis
+
+    //create payment intent
+    app.post('/create-payment-intent',verifyJWT ,async(req,res)=>{
+      console.log('reached to creat payment intent');
+      //get the price of the product
+      const {price} = req.body;
+      //make the payment amount to poisha 
+      const amount = price*100
+      //
+
+      console.log(price,amount);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount:amount,
+        currency:'usd',
+        payment_method_types: [
+          "card"
+        ],
+      })
+       res.send({
+        clientSecret: paymentIntent.client_secret
+       })
+    })
 
 
     // Send a ping to confirm a successful connection
