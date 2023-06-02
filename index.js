@@ -21,7 +21,7 @@ require('dotenv').config()
 
 //stripe
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
-console.log(process.env.PAYMENT_SECRET_KEY);
+// console.log(process.env.PAYMENT_SECRET_KEY);
 //console.log(process.env.ACCESS_TOKEN);
 
 
@@ -70,6 +70,8 @@ async function run() {
     const reviewCollection = client.db("bistroDb").collection("reviews")
 
     const cartCollection = client.db("bistroDb").collection("carts")
+    //payment
+    const paymentCollection = client.db("bistroDb").collection("payments")
 
 
     //JWT
@@ -257,14 +259,14 @@ async function run() {
 
     //create payment intent
     app.post('/create-payment-intent',verifyJWT ,async(req,res)=>{
-      console.log('reached to creat payment intent');
+      // console.log('reached to creat payment intent');
       //get the price of the product
       const {price} = req.body;
       //make the payment amount to poisha 
       const amount = price*100
       //
 
-      console.log(price,amount);
+      // console.log(price,amount);
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount:amount,
@@ -276,6 +278,18 @@ async function run() {
        res.send({
         clientSecret: paymentIntent.client_secret
        })
+    })
+
+
+    //payment related apis
+    app.post('/payments', verifyJWT ,async(req,res)=>{
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment)
+      // delete the paid cart items from the cart
+      const query = {_id: { $in: payment.cartItems.map(id => new ObjectId(id))}}
+      const deleteResult = await cartCollection.deleteMany(query)
+
+      res.send({insertResult, deleteResult})
     })
 
 
