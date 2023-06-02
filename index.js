@@ -120,7 +120,7 @@ async function run() {
 
 
 
-    //CREATE JWT
+    //CREATE JWT token after login
     app.post('/users', async (req, res) => {
       const user = req.body;
       // console.log(user);
@@ -145,7 +145,11 @@ async function run() {
       }
       const query = {email: email}
       const user = await usersCollection.findOne(query)
+
+      // if user is admin send true if not then send false
       const result = {admin: user?.role === 'admin'}
+      // console.log(result);
+
       res.send(result)
     })
 
@@ -291,6 +295,54 @@ async function run() {
 
       res.send({insertResult, deleteResult})
     })
+
+
+    // admin home apis 
+    app.get('/admin-stats',verifyJWT, verifyAdmin ,async(req,res)=>{
+      const users = await usersCollection.estimatedDocumentCount();
+      const products = await menuCollection.estimatedDocumentCount();
+
+      //user ra tader cart ar product payment korar pore koto gula orders holo mot
+      const orders = await paymentCollection.estimatedDocumentCount();
+
+      //1. best way to get sum of the price  field is to use group and sum operator
+      //ask chat gtp: I need a mongodb query to get the sum of the price field in the payments collection. I am using express on the server side but no mongoose
+
+      /* await paymentCollection.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$price' }
+          }
+        }
+      ]).toArray((err, result) => {
+        if (err) {
+          console.error('Error executing the aggregation:', err);
+          return;
+        }
+        console.log('Total sum of price:', result[0].total);
+      res.send({ */
+
+        //2. payment er sob data load kore for loop ba reduce kore total revenue ta ber korbo 
+        const payments = await paymentCollection.find().toArray();
+        const revenue = payments.reduce(( sum , payment ) => sum + payment.price ,0)
+
+        res.send({
+          revenue,
+        users,
+        products,
+        orders
+
+      })
+    })
+
+
+
+
+
+
+
+
 
 
     // Send a ping to confirm a successful connection
