@@ -267,7 +267,7 @@ async function run() {
       //get the price of the product
       const {price} = req.body;
       //make the payment amount to poisha 
-      const amount = price*100
+      const amount = parseInt(price*100)
       //
 
       // console.log(price,amount);
@@ -297,7 +297,8 @@ async function run() {
     })
 
 
-    // admin home apis 
+                // admin home apis 
+    //get admin stats
     app.get('/admin-stats',verifyJWT, verifyAdmin ,async(req,res)=>{
       const users = await usersCollection.estimatedDocumentCount();
       const products = await menuCollection.estimatedDocumentCount();
@@ -336,6 +337,85 @@ async function run() {
       })
     })
 
+
+
+    /**
+     * BANGLA SYSTEM (Second best solution)
+     * ---------------------------
+     * 1. load all payments
+     * 2. for each payment, get the menuItems array
+     * 3. for each item in the menuItems array get the menuItem from the menu collection
+     * 4. put them in an array: allOrderItems
+     * 5. separate allOrderedItems by category using filter
+     * 6. now get the quantity by using lengthL pizza.length
+     * for each category use reduce to get the total amount spent on the category
+     * 
+     */
+
+
+
+    app.get('/order-stats', verifyJWT , verifyAdmin , async(req,res)=>{
+      console.log('reached');
+      const pipeline = [
+        {
+          $lookup: {
+            from: 'menu',
+            localField: 'menuItems',
+            foreignField: '_id',
+            as: 'menuItemsData'
+          }
+        },
+        {
+          $unwind: '$menuItemsData'
+        },
+        {
+          $group: {
+            _id: '$menuItemsData.category',
+            count:{$sum:1},
+            total: { $sum: '$menuItemsData.price' }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            category: '$_id',
+            count:1,
+            total: { $round: ['$total', 2] }
+          }
+        }
+      ];
+      /* const pipeline = [
+        {
+          $lookup: {
+            from: 'menu',
+            localField: 'menuItems',
+            foreignField: '_id',
+            as: 'menuItemsData'
+          }
+        },
+        {
+          $unwind: '$menuItemsData'
+        },
+        {
+          $group: {
+            _id: '$menuItemsData.category',
+            total: { $sum: '$menuItemsData.price' }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            category: '$_id',
+            total: { $round: ['$total', 2] }
+          }
+        }
+      ]; */
+
+      const result = await paymentCollection.aggregate(pipeline).toArray();
+    
+      res.send(result)
+
+    })
 
 
 
